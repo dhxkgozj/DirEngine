@@ -95,6 +95,8 @@ int main(void)
 	vta.traceflags      = VEX_TRACE_FE;
 	vta.addProfInc      = False;
 	vta.sigill_diag     = True;
+	vta.instrument1     = NULL;
+    vta.instrument2     = NULL;
 	vta.disp_cp_chain_me_to_slowEP = (void*)0x12345678;
 	vta.disp_cp_chain_me_to_fastEP = (void*)0x12345679;
 	vta.disp_cp_xindir             = (void*)0x1234567A;
