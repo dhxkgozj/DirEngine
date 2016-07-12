@@ -1,0 +1,9 @@
+# Crude makefile to build the "vex" executable from test-vex.c
+
+vex: test-vex/test-vex.c test-vex/test-vex.h ../lib/vex/pub/*.h ../lib/vex/priv/*.c ../lib/vex/priv/*.h
+	(cd ../lib/vex/; make -f Makefile-gcc)
+	gcc -v -I../lib/vex/pub -o vex test-vex/test-vex.c ../lib/vex/libvex.a
+
+
+clean:
+	rm -f ../lib/vex/priv/*.o
