@@ -27,11 +27,9 @@ class Backend:
             _header = PE(self.path,self.filetype,stream=stream)
 
         elif(self.filetype == "elf"):
-            _header = ELF(self)
-        
+            _header = ELF(self.path,self.filetype,stream=stream)
+
         return _header
-
-
 
     def identify_filetype(self,stream):
         identstring = stream.read(0x1000)

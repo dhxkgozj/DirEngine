@@ -6,6 +6,7 @@ except ImportError:
 
 from error import Error
 from header._header import _header
+from header.Archinfo.ArchSelector import ArchSelector
 
 class PE(_header):
     _backend = None
@@ -20,6 +21,8 @@ class PE(_header):
         else:
             self._pe = pefile.PE(data=stream.read())
 
-        self.arch = pefile.MACHINE_TYPE[self._pe.FILE_HEADER.Machine]
+        self.arch_str = pefile.MACHINE_TYPE[self._pe.FILE_HEADER.Machine]
         self.base_addr = self._pe.OPTIONAL_HEADER.ImageBase
         self._entry = self._pe.OPTIONAL_HEADER.AddressOfEntryPoint
+
+        self.set_arch(ArchSelector().search(self.arch_str))

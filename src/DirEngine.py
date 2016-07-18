@@ -3,7 +3,7 @@ import threading, sys, platform,os,json
 sys.path.append("./")
 
 from Header.Backend import Backend
-
+from Functions.FunctionsManager import FunctionsManager
 
 class DirEngine:
     path = None
@@ -30,8 +30,19 @@ class DirEngine:
             pass
         backend = Backend(self.path,self.load_options)
         header = backend.Loader()
+        manager = FunctionsManager(header,self.load_options)
+        manager.analyze()
+        print header.endness
+        print header.os
+        print header
+        print header.arch
+
+        del backend
+
 
         
 
 if __name__ == "__main__":
-    DirEngine('notepad.exe').Analysis()
+    c  = DirEngine('taint.exe').Analysis()
+    a  = DirEngine('notepad.exe').Analysis()
+    b  = DirEngine('/bin/sh').Analysis()
