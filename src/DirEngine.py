@@ -32,7 +32,8 @@ class DirEngine:
         header = backend.Loader()
         manager = FunctionsManager(header,self.load_options)
         manager.analyze()
-        print header.endness
+        print hex(ord(header.read_bytes(header.read_addr(header._entry))[0]))
+        print hex(header._entry)
         print header.os
         print header
         print header.arch

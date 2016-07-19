@@ -21,7 +21,10 @@ class ELF(_header):
             self._elf = ELFFile(f)
         else:
             self._elf = ELFFile(stream)  
-
+        
+        self._elf.stream.seek(0)
+        self.bin_data = self._elf.stream.read()
+        self._elf.stream.seek(0)
         self.arch_str = self._elf.header.e_machine
         self._entry = self._elf.header.e_entry
         if(self._elf.little_endian):
@@ -30,3 +33,5 @@ class ELF(_header):
             self.endness = "Iend_BE"
         self.set_arch(ArchSelector().search(self.arch_str,self.endness))
 
+    def read_addr(self,addr):
+        return addr

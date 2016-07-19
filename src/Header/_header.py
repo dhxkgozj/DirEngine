@@ -11,6 +11,7 @@ class _header(object):
     os = None # os type windows,linux
     base_addr = 0 # pe = baseaddr
     endness = "Iend_LE" # endianness
+    bin_data = None # Binary Data
     def __init__(self,path,filetype):
         self.path = path
         self.filetype = filetype
@@ -19,3 +20,10 @@ class _header(object):
 
     def set_arch(self,arch):
         self.arch = arch
+
+    def read_bytes(self,offset,size=100):
+        return self.bin_data[offset:offset+size]
+
+
+    def read_addr(self,addr):
+        raise NotImplementedError("read_addr is not implemented.") 
