@@ -2,5 +2,10 @@
 
 class Function:
 
-	def __init__(self):
+	first_addr = None
+	def __init__(self,addr,entry_function=False):
+
 		pass
+
+
+
