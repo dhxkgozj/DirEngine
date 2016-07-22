@@ -3,7 +3,7 @@ try:
     import capstone as _capstone
 except ImportError:
     _capstone = None
-
+    
 from error import Error
 from Header.Archinfo._arch import _arch
 
@@ -13,7 +13,8 @@ class ArchX86(_arch):
     name = "X86"
     memory_endess = None
     sizeof = {'int' : 32, 'long' : 64, 'long long' : 64}
-
+    cs_mode = _capstone.CS_MODE_32 + _capstone.CS_MODE_LITTLE_ENDIAN
+    cs_arch = _capstone.CS_ARCH_X86
 
 
     def __init__(self,endness='Iend_LE',backend=None):

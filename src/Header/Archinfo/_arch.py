@@ -5,7 +5,11 @@ try:
 except ImportError:
     _pyvex = None
 
-
+try:
+    import capstone as _capstone
+except ImportError:
+    _capstone = None
+    
 class _arch(object):
     name = None
     bits = None
@@ -14,6 +18,9 @@ class _arch(object):
     register_endness = None
     memory_endness = None
     register_names = { }
+    cs_arch = None
+    cs_mode = None
+    _cs = None
     def __init__(self,name,bits=32):
         self.name = name
         self.bits = bits
@@ -33,3 +40,15 @@ class _arch(object):
             return self.register_names[offset]
         except KeyError:
             return str(offset)            
+
+    @property
+    def capstone(self):
+        if self.cs_arch is None:
+            raise ArchError("Arch %s does not support disassembly with capstone" % self.name)
+        if _capstone is None:
+            raise INSTALLerror("Capstone not install")
+
+        if self._cs is None:
+            self._cs = _capstone.Cs(self.cs_arch,self.cs_mode)
+            self._cs.detail = True
+        return self._cs

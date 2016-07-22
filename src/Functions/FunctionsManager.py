@@ -38,7 +38,7 @@ class CodeFlowManager:
 
 		while True:
 			if self.fqueue == []:
-				pass
+				break
 
 			fb = self.fqueue.pop()
 
@@ -59,5 +59,12 @@ class CodeFlowManager:
 		buff = self._header.read_bytes(self._header.read_addr(fb.addr))
 		addr = fb.addr + self._header.base_addr
 		arch = self._header.arch
+
+		pyvex.set_iropt_level(1)
 		irsb = pyvex.IRSB(buff,addr,arch,num_bytes=400,bytes_offset=0,traceflags=0)
-		print irsb.size
+		bytestring = buff[:irsb.size]
+		cs = arch.capstone
+		for cs_insn in cs.disasm(bytestring,addr):
+			print cs_insn.mnemonic, cs_insn.op_str
+		#print irsb.pp()
+
