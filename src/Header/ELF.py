@@ -5,8 +5,8 @@ except ImportError:
     ELFFile = None
 
 from error import Error
-from header._header import _header
-from header.Archinfo.ArchSelector import ArchSelector
+from Header._header import _header
+from Header.Archinfo.ArchSelector import ArchSelector
 
 class ELF(_header):
     _backend = None

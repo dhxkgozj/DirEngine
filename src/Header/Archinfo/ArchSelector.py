@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from error import Error
-from header.Archinfo.ArchARM32 import ArchARM32
-from header.Archinfo.ArchARM64 import ArchARM64
-from header.Archinfo.ArchMIPS32 import ArchMIPS32
-from header.Archinfo.ArchMIPS64 import ArchMIPS64
-from header.Archinfo.ArchPPC32 import ArchPPC32
-from header.Archinfo.ArchPPC64 import ArchPPC64
-from header.Archinfo.ArchX86 import ArchX86
-from header.Archinfo.ArchX64 import ArchX64
+from Header.Archinfo.ArchARM32 import ArchARM32
+from Header.Archinfo.ArchARM64 import ArchARM64
+from Header.Archinfo.ArchMIPS32 import ArchMIPS32
+from Header.Archinfo.ArchMIPS64 import ArchMIPS64
+from Header.Archinfo.ArchPPC32 import ArchPPC32
+from Header.Archinfo.ArchPPC64 import ArchPPC64
+from Header.Archinfo.ArchX86 import ArchX86
+from Header.Archinfo.ArchX64 import ArchX64
 
 
 class ArchSelector:
