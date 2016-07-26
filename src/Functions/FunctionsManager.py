@@ -7,7 +7,7 @@ import pyvex
 from Functions.Function import Function
 from Functions.Branch import Branch
 from Functions.Function_block import Function_block
-
+from Functions.Branch_block import Branch_block
 class FunctionsManager:
 	_header = None
 	_options = {}
@@ -50,14 +50,43 @@ class CodeFlowManager:
 		self.fqueue.append(fb)
 
 
+	def _initlize_branch(self,fb):
+		addr = fb.addr + self._header.base_addr
+		fb.bqueue_append(Branch_block(fb,0,addr))
+
+
 	def handle_function(self,fb):
 
-		self.disasmble(fb)
+		self._initlize_branch(fb)
+
+		count = 1
+		while True:
+			if fb.bqueue == []:
+				break
+
+			bb = fb.bqueue.pop(0)
+			irsb , insn = self.disasmble(bb)
+			bb.set_irsb(irsb)
+			bb.set_insn(insn)
+
+			self.handle_branch(bb)
+			count += 1
+
+	def handle_branch(self,bb):
+		irsb = bb.irsb
+		import pdb
+		pdb.set_trace()
+		if irsb.jumpkind == "Ijk_Boring":
+			bb.fb.bqueue_append(Branch_block(bb.fb,(bb.count + 1 ),int(str(irsb.next),16)))
+		elif irsb.jumpkind == "":
+			pass
 
 
-	def disasmble(self,fb):
-		buff = self._header.read_bytes(self._header.read_addr(fb.addr))
-		addr = fb.addr + self._header.base_addr
+
+	def disasmble(self,bb):
+		insn = []
+		buff = self._header.read_bytes(self._header.read_addr(bb.addr-self._header.base_addr))
+		addr = bb.addr
 		arch = self._header.arch
 
 		pyvex.set_iropt_level(1)
@@ -65,6 +94,9 @@ class CodeFlowManager:
 		bytestring = buff[:irsb.size]
 		cs = arch.capstone
 		for cs_insn in cs.disasm(bytestring,addr):
+			insn.append(cs_insn)
 			print cs_insn.mnemonic, cs_insn.op_str
-		#print irsb.pp()
+
+		return irsb, insn
+
 

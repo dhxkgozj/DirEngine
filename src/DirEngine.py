@@ -46,5 +46,5 @@ class DirEngine:
 
 if __name__ == "__main__":
     c  = DirEngine('taint.exe').Analysis()
-    a  = DirEngine('notepad.exe').Analysis()
-    b  = DirEngine('/bin/sh').Analysis()
+    #a  = DirEngine('notepad.exe').Analysis()
+    #b  = DirEngine('/bin/sh').Analysis()
