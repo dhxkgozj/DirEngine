@@ -3,4 +3,4 @@ import angr
 
 pro = angr.Project("taint.exe")
 
-cfg = pro.analyses.CFGAccurate()
+cfg = pro.analyses.CFG_fast()
