@@ -81,8 +81,10 @@ class CodeFlowManager:
             self.handle_branch(bb)
             count += 1
 
+
     def handle_branch(self,bb):
         irsb = bb.irsb
+        self.irsb_constants(irsb.constants)
         try:
             if irsb.jumpkind == "Ijk_Boring":
                 if irsb.direct_next is True:
@@ -130,6 +132,10 @@ class CodeFlowManager:
             import pdb
             pdb.set_trace()
 
+
+    def irsb_constants(self,constants):
+        for constant in constants:
+            int(str(constant),16)
 
 
     def disasmble(self,bb):

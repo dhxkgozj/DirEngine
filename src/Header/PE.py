@@ -46,3 +46,4 @@ class PE(_header):
                 return (addr - section.VirtualAddress + section.PointerToRawData)
 
 
+
