@@ -247,8 +247,8 @@ class ReadElf(object):
         # Now the entries
         #
         for nsec, section in enumerate(self.elffile.iter_sections()):
-            self._emit('  [%2u] %-17.17s %-15.15s ' % (
-                nsec, section.name, describe_sh_type(section['sh_type'])))
+            #self._emit('  [%2u] %-17.17s %-15.15s ' % (
+            #    nsec, section.name, describe_sh_type(section['sh_type'])))
 
             if self.elffile.elfclass == 32:
                 self._emitline('%s %s %s %s %3s %2s %3s %2s' % (

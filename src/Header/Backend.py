@@ -25,10 +25,10 @@ class Backend:
 
         if(self.filetype == "pe"):
             _header = PE(self.path,self.filetype,stream=stream)
-
+            print _header.get_meta_data()
+            
         elif(self.filetype == "elf"):
             _header = ELF(self.path,self.filetype,stream=stream)
-
         return _header
 
     def identify_filetype(self,stream):
