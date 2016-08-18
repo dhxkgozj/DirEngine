@@ -176,6 +176,9 @@ class PE(_header):
 
     def get_meta_data(self):
         result = {}
+        if not hasattr(self._pe,'FileInfo'):
+            return result
+            
         for fileinfo in self._pe.FileInfo:
             if fileinfo.Key == 'StringFileInfo':
                 for st in fileinfo.StringTable:
