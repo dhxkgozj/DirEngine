@@ -22,6 +22,7 @@ try:
 
 except ImportError:
     ELFFile = None
+import
 
 from error import Error
 from Header._header import _header
@@ -42,6 +43,13 @@ class ELF(_header):
         else:
             self._elf = ELFFile(stream)  
         
+        bindata = self._elf.stream.read()
+        self.fileMd5 = hashlib.md5(bindata).hexdigest()
+        self.fileSha1 = hashlib.sha1(bindata).hexdigest()
+        self.fileSha256 = hashlib.sha256(bindata).hexdigest()
+        self.fileSha512 = hashlib.sha512(bindata).hexdigest()
+        del bindata
+
         self._elf.stream.seek(0)
         self.bin_data = self._elf.stream.read()
         self._elf.stream.seek(0)

@@ -12,6 +12,10 @@ class _header(object):
     base_addr = 0 # pe = baseaddr
     endness = "Iend_LE" # endianness
     bin_data = None # Binary Data
+    fileMd5 = None
+    fileSha1 = None
+    fileSha256 = None
+    fileSha512 = None
     def __init__(self,path,filetype):
         self.path = path
         self.filetype = filetype
@@ -27,3 +31,16 @@ class _header(object):
 
     def read_addr(self,addr):
         raise NotImplementedError("read_addr is not implemented.") 
+
+    @property
+    def get_md5(self):
+        return self.fileMd5
+    @property
+    def get_sha1(self):
+        return self.fileSha1
+    @property
+    def get_sha256(self):
+        return self.fileSha256
+    @property
+    def get_sha512(self):
+        return self.fileSha512

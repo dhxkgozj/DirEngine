@@ -6,32 +6,40 @@ from Header.Backend import Backend
 from Functions.FunctionsManager import FunctionsManager
 
 class DirEngine:
-    path = None
-    arch = None
-    load_options = {}
-    def __init__(self,path,arch=None,defalut_analysis_mode=None,load_options=None):
-        self.path = path
-        self.arch = arch
+    # 내부적으로 쓰임
+    filename = None
+    _Analyzer = None # 상위 호출 클래스
+    _arch = None
+    _load_options = {}
+    ##################################
+    header = None # 헤더 객체
+    fm = None # Function_Manager
+
+    def __init__(self,filename,Analyzer=None,sig_bit=False,arch=None,load_options=None):
+        self.filename = filename
+        self.Analyzer = Analyzer
+        self._arch = arch
 
         if load_options is None:
             load_options = {}
-        self.load_options = load_options
+        self._load_options = load_options
 
+        backend = Backend(self.filename,self._load_options)
+        self.header = backend.Loader()
 
-        if path == None:
-            raise Exception("Path is None")
+        if filename == None:
+            raise Exception("File is None")
 
-        elif not isinstance(path, (unicode, str)) or not os.path.exists(path) or not os.path.isfile(path):
-            raise Exception("Not a valid binary file: %s" % repr(path))
+        elif not isinstance(filename, (unicode, str)) or not os.path.exists(filename) or not os.path.isfile(filename):
+            raise Exception("Not a valid binary file: %s" % repr(filename))
 
 
     def Analysis(self):
-        if(self.arch != None):
-            pass
-        backend = Backend(self.path,self.load_options)
-        header = backend.Loader()
-        manager = FunctionsManager(header,self.load_options)
-        manager.analyze()
+        if(self.header == None):
+            return False
+            
+        self.fm = FunctionsManager(self.header,self._load_options)
+        self.fm.analyze()
         '''
         print hex(ord(header.read_bytes(header.read_addr(header._entry))[0]))
         print hex(header._entry)

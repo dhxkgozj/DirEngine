@@ -30,6 +30,12 @@ class PE(_header):
             self.bin_data = stream.read()
             stream.seek(0)
             self._pe = pefile.PE(data=stream.read())
+        
+        stream.seek(0)
+        self.fileMd5 = hashlib.md5(self.bindata).hexdigest()
+        self.fileSha1 = hashlib.sha1(self.bindata).hexdigest()
+        self.fileSha256 = hashlib.sha256(self.bindata).hexdigest()
+        self.fileSha512 = hashlib.sha512(self.bindata).hexdigest()
 
         self.arch_str = pefile.MACHINE_TYPE[self._pe.FILE_HEADER.Machine]
         self.base_addr = self._pe.OPTIONAL_HEADER.ImageBase

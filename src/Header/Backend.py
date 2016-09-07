@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import struct
+import struct,hashlib
 
 from error import Error
 from Header.PE import PE
@@ -20,8 +20,7 @@ class Backend:
             stream = self.path
         else:
             stream = open(self.path, 'rb')
-
-        self.filetype = self.identify_filetype(stream)
+        filetype = self.identify_filetype(stream)
 
         if(self.filetype == "pe"):
             _header = PE(self.path,self.filetype,stream=stream)
@@ -29,6 +28,7 @@ class Backend:
             
         elif(self.filetype == "elf"):
             _header = ELF(self.path,self.filetype,stream=stream)
+
         return _header
 
     def identify_filetype(self,stream):
