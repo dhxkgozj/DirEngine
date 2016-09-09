@@ -19,8 +19,7 @@ class FunctionsManager:
 
     def analyze(self):
         self.functions = []
-        self.CF = CodeFlowManager(self)
-        CF.analyze()
+        CodeFlowManager(self).analyze()
 
 
 
@@ -49,13 +48,14 @@ class CodeFlowManager:
             fb = self.fqueue.pop(0)
             print "Function : ",hex(fb.addr)
             self.handle_function(fb)
-            self.fqueue_sucess_addr.append(fb.addr)
-            self.fqueue_sucess.append(fb)
+            import pdb
+            pdb.set_trace()
         print "Function count is " ,len(self.fqueue_sucess)
 
     def fqueue_append(self,fb):
         if not fb.addr in self.fqueue_sucess:
             self.fqueue.append(fb)
+            self.fqueue_sucess.append(fb.addr)
 
 
     def _initlize_function(self):
