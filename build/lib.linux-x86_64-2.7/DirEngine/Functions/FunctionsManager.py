@@ -8,18 +8,267 @@ from .Function import Function
 from .Branch import Branch
 from .Function_block import Function_block
 from .Branch_block import Branch_block
+from multiprocessing import Process,Queue
+
+
 class FunctionsManager:
     _header = None
     _options = {}
     functions = []
+    ###############################
+    functions = [] # 함수 리스트
+    mne_count = {} # 전체 어셈블리 빈도수
+
     def __init__(self,header,options):
         self._header = header
         self._options = options
+        self._sig_bit = True
+        self.branch_count = 0 # branch 개수
 
 
     def analyze(self):
         self.functions = []
-        CodeFlowManager(self).analyze()
+        self.CF = CodeFlowManager(self)
+        self.CF.analyze()
+        self._Analysis_Functions(self.CF.fqueue_sucess)
+
+
+
+    def _Analysis_Functions(self,f):
+        functions = []
+        processing = []
+        result = Queue()
+        for _f in f:
+            function = _f
+            print hex(_f.addr) , "START"
+            processing.append(Process(target = self._Get_Function, args= (function,result)))
+            processing[len(processing)-1].start()
+        
+        result.put('OK')
+        for process in processing:
+            process.join()
+
+        while True:
+            tmp = result.get()
+            if tmp == 'OK': break
+
+            else:
+                print hex(tmp.addr) 
+                functions.append(tmp) 
+            
+
+        return functions
+
+
+    def _Get_Function(self,f,result):
+        fnc = {}
+        fnc['blocks'] = []
+        fnc['xref_to'] = f.xref_fb_to
+        fnc['xref_from'] = f.xref_fb_from
+        fnc['addr'] = f.addr
+        fnc['symbol'] = str(f.name)
+        fnc['signature'] = {
+            'Ist_NoOp' : 0,
+            'Ist_IMark' : 0,
+            'Ist_AbiHint' : 0,
+            'Ist_Put' : 0,
+            'Ist_PutI' : 0,
+            'Ist_WrTmp' : 0,
+            'Ist_Store' : 0,
+            'Ist_CAS' : 0,
+            'Ist_LLSC' : 0,
+            'Ist_MBE' : 0,
+            'Ist_Dirty' : 0,
+            'Ist_Exit' : 0,
+            'Ist_LoadG' : 0,
+            'Ist_StoreG' : 0
+        }
+        fnc['expr'] = {
+            'Iex_Binder' : 0,
+            'Iex_Get' : 0,
+            'Iex_RdTmp' : 0,
+            'Iex_Qop' : 0,
+            'Iex_Triop' : 0,
+            'Iex_Binop' : 0,
+            'Iex_Unop' : 0,
+            'Iex_Load' : 0,
+            'Iex_Const' : 0,
+            'Iex_CCall' : 0,
+            'Iex_ITE' : 0
+        }
+        fnc['edge'] = {
+            'node' : 0,
+            'in' : 0,
+            'out' : 0
+        }
+        fnc['operation'] = {}
+        fnc['total_signature'] = {}
+        fnc['assemble_count'] = {}
+
+        branchs = f.bqueue_sucess
+        if(self._sig_bit == True):
+            fnc['edge']['in'] = 0
+            fnc['edge']['out'] = len(fnc['xref_from'])
+        for branch in branchs:
+            fnc['blocks'].append(self._Get_Branch(f,fnc,branch))
+        if(self._sig_bit == True):
+            fnc['edge']['node'] = len(fnc['blocks'])
+        fnc['total_signature'].update(fnc['signature'])
+        fnc['total_signature'].update(fnc['expr'])
+        fnc['total_signature'].update(fnc['edge'])
+        return fnc
+
+    def _Get_Vex_Signatures(self,vex,f,b):
+        for stat in vex['statements']:
+            if(stat['tag'] in f['signature'].keys()):
+                f['signature'][stat['tag']] += 1
+            else:
+                f['signature'][stat['tag']] = 1
+
+            if(stat['tag'] == "Ist_WrTmp"):
+                self._Get_Expr_Signatures(stat,f,b)
+
+
+    def _Get_Edge_Signatures(self,vex,f,b):
+        if('in' in f['edge'].keys()):
+            f['edge']['in'] += len(b['b_from'])
+        else:
+            f['edge']['in'] = 0
+            f['edge']['in'] += len(b['b_from'])
+
+
+    def _Get_Expr_Signatures(self,stat,f,b):
+        tag = stat['data']['tag']
+        if(tag in f['expr'].keys()):    
+            f['expr'][tag] += 1
+
+        if('op' in stat['data'].keys()):
+            self._Get_Op_Signatures(stat,f,b)
+
+    def _Get_Op_Signatures(self,stat,f,b):
+        op = stat['data']['op']
+        if(op in f['operation'].keys()):    
+            f['operation'][op] += 1
+        else:
+            f['operation'][op] = 1
+
+
+    def _Get_Branch(self,f,fnc,b):
+        bnc = {}
+        bnc['vex'] = self._Get_Vex(b.irsb,fnc)
+        bnc['capstone'] = self._Get_Capstone(b.insn,fnc)
+        bnc['b_to'] = []
+        bnc['b_from'] = []
+        bnc['addr'] = b.addr
+        bnc['count'] = b.count
+        if(self._sig_bit == True):
+            self._Get_Vex_Signatures(bnc['vex'],fnc,bnc)
+        for _to in b.xref_bb_to:
+            bnc['b_from'].append(_to.addr)
+        for _from in b.xref_bb_from:
+            bnc['b_to'].append(_from.addr)
+
+        if(self._sig_bit == True):
+            self._Get_Edge_Signatures(bnc['vex'],fnc,bnc)
+        self.branch_count += 1
+        return bnc
+
+
+    def _Get_Capstone(self,c,fnc):
+        capstone = {}
+        capstone['insns'] = []
+        for i in c:
+            capstone['insns'].append(self._Get_Insn(i,fnc))
+        return capstone
+
+    def _Get_Insn(self,i,fnc):
+        insn = {}
+        insn['operands'] = []
+        insn['mnemonic'] = i.mnemonic
+        if(self._sig_bit == True):
+            self._Get_mne_count(insn['mnemonic'])
+            self._Get_fun_mne_count(insn['mnemonic'],fnc)
+        insn['bytes'] = str(i.bytes).decode('latin-1')
+        insn['address'] = i.address
+        insn['op_str'] = i.op_str
+        count = 0
+        for operand in i.operands:
+            insn['operands'].append(self._Get_Operand(operand,count))
+            count += 1
+        return insn
+
+
+    def _Get_Operand(self,o,count):
+        operand = {}
+        operand['count'] = count
+        operand['reg'] = o.reg
+        operand['imm'] = o.imm
+        operand['type'] = o.type
+        operand['size '] = o.size
+        operand['mem'] = {
+            'disp' : o.mem.disp,
+            'index' : o.mem.index,
+            'base' : o.mem.base,
+            'segment' : o.mem.segment,
+            'scale' : o.mem.scale
+        }
+        return operand
+
+    def _Get_Vex(self,v,fnc):
+        vex = {}
+        vex['statements'] = []
+        vex['offsIP'] = v.offsIP
+        vex['jumpkind'] = v.jumpkind
+        vex['stmts_used'] = v.stmts_used
+        vex['direct_next'] = v.direct_next
+        vex['instructions'] = v.instructions
+        vex['size'] = v.size
+        vex['typenv'] = v.tyenv.types
+        vex['operations'] = v.operations
+
+        for statement in v.statements:
+            vex['statements'].append(self._Get_Statement(statement))
+        return vex
+
+    old_addr = 0
+    stat_count = 0
+    def _Get_Statement(self,s): # 태그마다 나눠서 처리 해야함 (미구현)
+        stat = {}
+        stat['tag'] = s.tag
+        stat['pp'] = str(s)
+        if isinstance(s,pyvex.stmt.IMark):
+            self.old_addr = s.addr
+            self.stat_count = 0
+        stat['count'] = self.stat_count
+        stat['addr'] = self.old_addr
+
+        if isinstance(s,pyvex.stmt.WrTmp):
+            stat['data'] = {}
+            stat['data']['tag'] = s.data.tag
+            if('op' in s.data.__dict__.keys()):
+                stat['data']['op'] = s.data.op
+
+        self.stat_count += 1
+        return stat
+
+    def _Get_Header(self,h): #PE,ELF를 나눠서 처리 해야함
+        if h.filetype == "pe":
+            return self._Analyzer.Header()
+        return {}
+
+    # 어셈명령 빈도
+    def _Get_mne_count(self,mne):
+        if self.mne_count.has_key(mne):
+            self.mne_count[mne] += 1
+        else:
+            self.mne_count[mne] = 1
+
+    # 어셈명령 빈도
+    def _Get_fun_mne_count(self,mne,fnc):
+        if fnc['assemble_count'].has_key(mne):
+            fnc['assemble_count'][mne] += 1
+        else:
+            fnc['assemble_count'][mne] = 1
 
 
 
@@ -28,11 +277,14 @@ class CodeFlowManager:
     _header = None
     fqueue = []
     fqueue_sucess = []
+    fqueue_sucess_addr = []
     new_fb_list = []
     def __init__(self,manager):
         self._manager = manager
         self._header = self._manager._header
         self.fqueue = []
+        self.fqueue_sucess = []
+        self.fqueue_sucess_addr = []
         self.new_fb_list = []
         self.new_bb_list = []
         pyvex.set_iropt_level(1)
@@ -46,16 +298,18 @@ class CodeFlowManager:
                 break
 
             fb = self.fqueue.pop(0)
+            if(fb.addr in self.fqueue_sucess_addr):
+                continue
+
             print "Function : ",hex(fb.addr)
             self.handle_function(fb)
-            import pdb
-            pdb.set_trace()
+            self.FuncAnaEnd_Handler(fb)
+
         print "Function count is " ,len(self.fqueue_sucess)
 
     def fqueue_append(self,fb):
-        if not fb.addr in self.fqueue_sucess:
+        if not fb.addr in self.fqueue_sucess_addr:
             self.fqueue.append(fb)
-            self.fqueue_sucess.append(fb.addr)
 
 
     def _initlize_function(self):
@@ -172,6 +426,14 @@ class CodeFlowManager:
 
     def Nodecode_Handler(self,bb,irsb):
         pass
+
+
+    def FuncAnaEnd_Handler(self,fb):
+        if(fb.addr not in self.fqueue_sucess_addr):
+            self.fqueue_sucess_addr.append(fb.addr)
+            self.fqueue_sucess.append(fb)
+
+
 
     def irsb_constants(self,constants):
         for constant in constants:
