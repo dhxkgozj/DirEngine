@@ -107,6 +107,12 @@ class ELF(_header):
             result['e_shstrndx'] = header['e_shstrndx']
         return result
 
+    def is_section(self,addr):
+
+        for nsec, section in enumerate(self._elf.iter_sections()):
+            if  addr >= (section['sh_addr']) and addr <= (section['sh_addr'] + section['sh_size']):
+                section.Name = section.name
+                return section
 
     def get_sections(self):
         sections = []

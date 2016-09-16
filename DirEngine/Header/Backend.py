@@ -27,6 +27,7 @@ class Backend:
             
         elif(filetype == "elf"):
             _header = ELF(self.path,self.filetype,stream=stream)
+            _header.get_sections()
 
         return _header
 

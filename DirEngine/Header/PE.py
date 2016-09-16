@@ -57,6 +57,13 @@ class PE(_header):
                 return (addr - section.VirtualAddress + section.PointerToRawData)
 
 
+    def is_section(self,addr):
+        for section in self._pe.sections:
+            if section.contains_rva(addr-self.base_addr):
+                return section
+
+
+
     def get_dos_header(self):
         result = {}
         DOS = self._pe.DOS_HEADER

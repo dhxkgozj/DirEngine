@@ -30,7 +30,7 @@ class FunctionsManager:
         self.functions = []
         self.CF = CodeFlowManager(self)
         self.CF.analyze()
-        self._Analysis_Functions(self.CF.fqueue_sucess)
+        #self._Analysis_Functions(self.CF.fqueue_sucess)
 
 
 
@@ -41,7 +41,7 @@ class FunctionsManager:
         for _f in f:
             function = _f
             print hex(_f.addr) , "START"
-            processing.append(Process(target = self._Get_Function, args= (function,result)))
+            processing.append(Process(targetas = self._Get_Function, args= (function,result)))
             processing[len(processing)-1].start()
         
         result.put('OK')
@@ -279,6 +279,7 @@ class CodeFlowManager:
     fqueue_sucess = []
     fqueue_sucess_addr = []
     new_fb_list = []
+    main_section = ""
     def __init__(self,manager):
         self._manager = manager
         self._header = self._manager._header
@@ -301,9 +302,11 @@ class CodeFlowManager:
             if(fb.addr in self.fqueue_sucess_addr):
                 continue
 
-            print "Function : ",hex(fb.addr)
             self.handle_function(fb)
             self.FuncAnaEnd_Handler(fb)
+            if(fb.const_jump == True):
+                print "EGOIST --------"
+            print "Function : ",hex(fb.addr)
 
         print "Function count is " ,len(self.fqueue_sucess)
 
@@ -314,6 +317,7 @@ class CodeFlowManager:
 
     def _initlize_function(self):
         fb = Function_block(self._header._entry + self._header.base_addr,entry_function=True)
+        self.main_section = self._manager._header.is_section(fb.addr).Name
         self.fqueue_append(fb)
 
 
@@ -342,7 +346,6 @@ class CodeFlowManager:
 
     def handle_branch(self,bb):
         irsb = bb.irsb
-        self.irsb_constants(irsb.constants)
         try:
             if irsb.jumpkind == "Ijk_Boring":
                 self.Boring_Handler(bb,irsb)
@@ -366,6 +369,9 @@ class CodeFlowManager:
             print e
             import pdb
             pdb.set_trace()
+
+        self.irsb_constants(bb)
+
 
 
     def Boring_Handler(self,bb,irsb):
@@ -434,10 +440,45 @@ class CodeFlowManager:
             self.fqueue_sucess.append(fb)
 
 
-
-    def irsb_constants(self,constants):
+    def irsb_constants(self,bb):
+        irsb = bb.irsb
+        constants = irsb.constants
+        jump_targets = list(irsb.constant_jump_targets)
         for constant in constants:
-            int(str(constant),16)
+            constant = int(str(constant),16)
+
+            if irsb.direct_next is True:
+                if constant == int(str(irsb.next),16): #next 인경우
+                    continue
+
+            if constant in jump_targets: #jump target 인경우
+                continue
+
+            if constant == (bb.addr + irsb.size): #next block
+                continue
+
+            if isinstance(irsb.statements[len(irsb.statements)-1],pyvex.IRStmt.Exit): # 조건 점프일경우
+                insert_addr = irsb.statements[len(irsb.statements)-1].dst
+                if type(insert_addr) is pyvex.IRExpr.Const:  # pylint: disable=unidiomatic-typecheck
+                    target_addr = insert_addr.con.value
+                elif type(insert_addr) in (pyvex.IRConst.U32, pyvex.IRConst.U64):  # pylint: disable=unidiomatic-typecheck
+                    target_addr = insert_addr.value
+                elif type(insert_addr) in (int, long):  # pylint: disable=unidiomatic-typecheck
+                    target_addr = insert_addr
+                else:
+                    target_addr = None
+                    import pdb
+                    pdb.set_trace()
+                if constant == target_addr:
+                    continue
+
+            try:
+                if self.main_section == self._manager._header.is_section(constant).Name: # 간접 Address Functio Block
+                    new_fb = self.new_fb(Function_block(constant,const_jump=True))
+                    self.xref_const(bb,new_fb)
+                    self.fqueue_append(new_fb)
+            except:
+                pass
 
 
     def disasmble(self,bb):
@@ -462,6 +503,11 @@ class CodeFlowManager:
     def xref_fb(self,src_fb,desc_fb): # Function Block Xref
         src_fb.set_xref_src_fb(desc_fb)
         desc_fb.set_xref_desc_fb(src_fb)
+
+
+    def xref_const(self,src_bb,desc_fb): # B->Function Block Xref
+        src_bb.set_xref_const_src_fb(desc_fb)
+        desc_fb.set_xref_const_desc_fb(src_bb)
 
 
     def new_fb(self,fb):
