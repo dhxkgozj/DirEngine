@@ -30,16 +30,32 @@ class FunctionsManager:
         self.functions = []
         self.CF = CodeFlowManager(self)
         self.CF.analyze()
-        #self._Analysis_Functions(self.CF.fqueue_sucess)
-
+        self._Analysis_Functions(self.CF.fqueue_sucess)
 
 
     def _Analysis_Functions(self,f):
         functions = []
         processing = []
         result = Queue()
-        for _f in f:
-            function = _f
+
+
+        for _f in f.keys():
+            function = f[_f]
+            print hex(function.addr) , "START"
+            self._Get_Function(function)
+            self.functions.append(function) 
+            
+
+    '''
+
+    def _Analysis_Functions(self,f):
+        functions = []
+        processing = []
+        result = Queue()
+
+
+        for _f in f.keys():
+            function = f[_f]
             print hex(_f.addr) , "START"
             processing.append(Process(targetas = self._Get_Function, args= (function,result)))
             processing[len(processing)-1].start()
@@ -58,9 +74,9 @@ class FunctionsManager:
             
 
         return functions
+    '''
 
-
-    def _Get_Function(self,f,result):
+    def _Get_Function(self,f):
         fnc = {}
         fnc['blocks'] = []
         fnc['xref_to'] = f.xref_fb_to
@@ -275,18 +291,16 @@ class FunctionsManager:
 class CodeFlowManager:
     _manager = None
     _header = None
-    fqueue = []
-    fqueue_sucess = []
-    fqueue_sucess_addr = []
-    new_fb_list = []
+    fqueue = {}
+    fqueue_sucess = {}
+    new_fb_list = {}
     main_section = ""
     def __init__(self,manager):
         self._manager = manager
         self._header = self._manager._header
-        self.fqueue = []
-        self.fqueue_sucess = []
-        self.fqueue_sucess_addr = []
-        self.new_fb_list = []
+        self.fqueue = {}
+        self.fqueue_sucess = {}
+        self.new_fb_list = {}
         self.new_bb_list = []
         pyvex.set_iropt_level(1)
 
@@ -295,11 +309,11 @@ class CodeFlowManager:
         self._initlize_function()
 
         while True:
-            if self.fqueue == []:
+            if self.fqueue == {}:
                 break
 
-            fb = self.fqueue.pop(0)
-            if(fb.addr in self.fqueue_sucess_addr):
+            fb = self.fqueue[self.fqueue.keys().pop(0)]
+            if(str(fb.addr) in self.fqueue_sucess.keys()):
                 continue
 
             self.handle_function(fb)
@@ -311,8 +325,8 @@ class CodeFlowManager:
         print "Function count is " ,len(self.fqueue_sucess)
 
     def fqueue_append(self,fb):
-        if not fb.addr in self.fqueue_sucess_addr:
-            self.fqueue.append(fb)
+        if(str(fb.addr) not in self.fqueue_sucess.keys()):
+            self.fqueue[str(fb.addr)] = fb
 
 
     def _initlize_function(self):
@@ -435,9 +449,9 @@ class CodeFlowManager:
 
 
     def FuncAnaEnd_Handler(self,fb):
-        if(fb.addr not in self.fqueue_sucess_addr):
-            self.fqueue_sucess_addr.append(fb.addr)
-            self.fqueue_sucess.append(fb)
+        if(str(fb.addr) not in self.fqueue_sucess.keys()):
+            self.fqueue_sucess[str(fb.addr)] = fb
+            del self.fqueue[str(fb.addr)]
 
 
     def irsb_constants(self,bb):
@@ -511,10 +525,14 @@ class CodeFlowManager:
 
 
     def new_fb(self,fb):
-        self.new_fb_list.append(fb)
-        return self.new_fb_list[len(self.new_fb_list)-1]
+        if(str(fb.addr) not in self.new_fb_list.keys()):
+            self.new_fb_list[str(fb.addr)] = fb
+
+        return self.new_fb_list[str(fb.addr)]
 
 
     def new_bb(self,bb):
         self.new_bb_list.append(bb)
         return self.new_bb_list[len(self.new_bb_list)-1]        
+
+

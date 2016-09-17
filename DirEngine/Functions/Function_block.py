@@ -27,10 +27,10 @@ class Function_block:
 			self.bqueue_sucess.append(bb)
 
 	def set_xref_src_fb(self,desc_fb):
-		self.xref_fb_from.append(desc_fb)
+		self.xref_fb_from.append(desc_fb.addr)
 
 	def set_xref_desc_fb(self,src_fb):
-		self.xref_fb_to.append(src_fb)
+		self.xref_fb_to.append(src_fb.addr)
 
 	def set_xref_const_desc_fb(self,src_bb):
-		self.xref_const_to.append(src_bb)
+		self.xref_const_to.append(src_bb.addr)
