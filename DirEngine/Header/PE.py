@@ -8,6 +8,10 @@ import hashlib
 from ..error import Error
 from ._header import _header
 from .Archinfo.ArchSelector import ArchSelector
+
+ASLR = 0x40
+
+
 def none(string):
     if string == None:
         string = 0
@@ -44,6 +48,10 @@ class PE(_header):
 
         self.set_arch(ArchSelector().search(self.arch_str))
 
+        if (self._pe.OPTIONAL_HEADER.DllCharacteristics | ASLR) == self._pe.OPTIONAL_HEADER.DllCharacteristics:
+            self.set_aslr(True)
+        else:
+            self.set_aslr(False)
 
     def read_rva_addr(self,addr):
         for section in self._pe.sections:
@@ -208,10 +216,7 @@ class PE(_header):
 
     def Header(self):
         header = {}
-        '''
-        header['binary_type'] = self.get_binary_type()
-        header['crypto_type'] = self.get_crypto_type()
-        '''
+
         header['dos'] = self.get_dos_header()
         header['sections'] = self.get_pe_sections()
         header['nt_file'] = self.get_nt_file_header()

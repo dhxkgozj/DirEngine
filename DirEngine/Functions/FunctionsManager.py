@@ -26,27 +26,84 @@ class FunctionsManager:
         self.branch_count = 0 # branch 개수
 
 
-    def analyze(self):
+    def analyze(self,bit=True):
         self.functions = []
         self.CF = CodeFlowManager(self)
         self.CF.analyze()
-        self._Analysis_Functions(self.CF.fqueue_sucess)
+
+        if bit is True:
+            pass
+            #self._Analysis_Functions(self.CF.fqueue_sucess)
 
 
     def _Analysis_Functions(self,f):
-        functions = []
-        processing = []
+        f_list = f.values() 
         result = Queue()
+        f1 = []
+        f2 = []
+        f3 = []
+        #f4 = []
+        #f5 = []
+        aver_size = len(f_list) / 4
+        plus = len(f_list) % 4
 
 
+        for i in xrange(0,aver_size):
+            f1.append(f_list.pop())
+        for i in xrange(0,aver_size):
+            f2.append(f_list.pop())
+        for i in xrange(0,aver_size):
+            f3.append(f_list.pop())
+        #for i in xrange(0,aver_size):
+        #    f4.append(f_list.pop())      
+        #for i in xrange(0,aver_size):
+        #    f5.append(f_list.pop())                   
+        for i in xrange(0,plus):
+            f1.append(f_list.pop())
+
+        p1 = Process(target = self._Process, args= (f1,result))
+        p2 = Process(target = self._Process, args= (f2,result))
+        p3 = Process(target = self._Process, args= (f3,result))
+        #p4 = Process(target = self._Process, args= (f4,result))
+        #p5 = Process(target = self._Process, args= (f5,result))
+        p1.start()
+        p2.start()
+        p3.start()
+        #p4.start()
+        #p5.start()
+
+        p1.join()
+        p2.join()
+        p3.join()
+        #p4.join()
+        #p5.join()
+
+        result.put('STOP')
+        sum = 0
+        while True:
+            tmp = result.get()
+            if tmp == 'STOP' : break
+            else: self.functions.extend(tmp)
+
+    def _Process(self,f_list,result):
+        functions = []
+        for _f in f_list:
+            function = _f
+            print hex(function.addr)
+            fnc = self._Get_Function(function)
+            functions.append(fnc) 
+        result.put(functions)
+
+    '''
+    def _Analysis_Functions(self,f):
+        Process(targetas = self._Get_Function, args= (function,result))
         for _f in f.keys():
             function = f[_f]
-            print hex(function.addr) , "START"
+            print hex(function.addr)
             self._Get_Function(function)
             self.functions.append(function) 
             
 
-    '''
 
     def _Analysis_Functions(self,f):
         functions = []
@@ -57,7 +114,7 @@ class FunctionsManager:
         for _f in f.keys():
             function = f[_f]
             print hex(_f.addr) , "START"
-            processing.append(Process(targetas = self._Get_Function, args= (function,result)))
+            processing.append(Process(targets = self._Get_Function, args= (function,result)))
             processing[len(processing)-1].start()
         
         result.put('OK')
@@ -267,11 +324,6 @@ class FunctionsManager:
         self.stat_count += 1
         return stat
 
-    def _Get_Header(self,h): #PE,ELF를 나눠서 처리 해야함
-        if h.filetype == "pe":
-            return self._Analyzer.Header()
-        return {}
-
     # 어셈명령 빈도
     def _Get_mne_count(self,mne):
         if self.mne_count.has_key(mne):
@@ -318,9 +370,6 @@ class CodeFlowManager:
 
             self.handle_function(fb)
             self.FuncAnaEnd_Handler(fb)
-            if(fb.const_jump == True):
-                print "EGOIST --------"
-            print "Function : ",hex(fb.addr)
 
         print "Function count is " ,len(self.fqueue_sucess)
 
