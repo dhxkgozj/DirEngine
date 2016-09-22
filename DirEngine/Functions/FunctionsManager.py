@@ -9,6 +9,7 @@ from .Branch import Branch
 from .Function_block import Function_block
 from .Branch_block import Branch_block
 from multiprocessing import Process,Queue
+from .Decompiler import Decompiler
 
 
 class FunctionsManager:
@@ -348,6 +349,7 @@ class CodeFlowManager:
     new_fb_list = {}
     main_section = ""
     def __init__(self,manager):
+        self.decom = Decompiler(self)
         self._manager = manager
         self._header = self._manager._header
         self.fqueue = {}
@@ -499,8 +501,10 @@ class CodeFlowManager:
 
     def FuncAnaEnd_Handler(self,fb):
         if(str(fb.addr) not in self.fqueue_sucess.keys()):
+            #self._Decompile(fb)
             self.fqueue_sucess[str(fb.addr)] = fb
             del self.fqueue[str(fb.addr)]
+
 
 
     def irsb_constants(self,bb):
@@ -582,6 +586,8 @@ class CodeFlowManager:
 
     def new_bb(self,bb):
         self.new_bb_list.append(bb)
-        return self.new_bb_list[len(self.new_bb_list)-1]        
+        return self.new_bb_list[len(self.new_bb_list)-1]
 
 
+    def _Decompile(self,fb):
+        self.decom.Decompile(fb)
