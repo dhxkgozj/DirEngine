@@ -9,7 +9,12 @@ class Function_block:
 	bqueue = []
 	bqueue_sucess = []
 	bqueue_sucess_addr = []
-	def __init__(self,addr,entry_function=False,const_jump=False):
+	signature = {}
+	expr = {}
+	edge = {}
+	operation = {}
+	assemble_count = {}
+	def __init__(self,addr,const_jump=False,entry_function=False):
 		self.addr = addr
 		self.name = "sub_" + str(hex(addr))
 		self.entry_function = entry_function
@@ -17,7 +22,42 @@ class Function_block:
 		self.xref_fb_from = []
 		self.xref_const_to = []
 		self.const_jump = const_jump
-
+		self.signature = {
+            'Ist_NoOp' : 0,
+            'Ist_IMark' : 0,
+            'Ist_AbiHint' : 0,
+            'Ist_Put' : 0,
+            'Ist_PutI' : 0,
+            'Ist_WrTmp' : 0,
+            'Ist_Store' : 0,
+            'Ist_CAS' : 0,
+            'Ist_LLSC' : 0,
+            'Ist_MBE' : 0,
+            'Ist_Dirty' : 0,
+            'Ist_Exit' : 0,
+            'Ist_LoadG' : 0,
+            'Ist_StoreG' : 0
+        }
+        self.expr = {
+            'Iex_Binder' : 0,
+            'Iex_Get' : 0,
+            'Iex_RdTmp' : 0,
+            'Iex_Qop' : 0,
+            'Iex_Triop' : 0,
+            'Iex_Binop' : 0,
+            'Iex_Unop' : 0,
+            'Iex_Load' : 0,
+            'Iex_Const' : 0,
+            'Iex_CCall' : 0,
+            'Iex_ITE' : 0
+        }
+        self.edge = {
+            'node' : 0,
+            'in' : 0,
+            'out' : 0
+        }
+        self.operation = {}
+        self.assemble_count = {}
 
 
 	def bqueue_append(self,bb):
@@ -25,6 +65,8 @@ class Function_block:
 			self.bqueue.append(bb)
 			self.bqueue_sucess_addr.append(bb.addr)
 			self.bqueue_sucess.append(bb)
+			self.edge['in'] = 0
+            self.edge['node'] += 1
 
 	def set_xref_src_fb(self,desc_fb):
 		self.xref_fb_from.append(desc_fb.addr)

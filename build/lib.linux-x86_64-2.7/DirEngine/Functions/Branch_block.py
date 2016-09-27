@@ -15,7 +15,7 @@ class Branch_block:
 		self.addr = addr
 		self.xref_bb_to = []
 		self.xref_bb_from = []
-
+		self.xref_const_from = []
 
 
 	def set_irsb(self,irsb):
@@ -28,4 +28,14 @@ class Branch_block:
 		self.xref_bb_from.append(desc_bb)
 
 	def set_xref_desc_bb(self,src_bb):
-		self.xref_bb_to.append(src_bb)		
+		self.xref_bb_to.append(src_bb)
+
+
+	def set_xref_const_src_fb(self,desc_fb):
+		self.xref_const_from.append(desc_fb)
+
+
+	def insn_pp(self):
+		for i in self.insn:
+			print i.mnemonic + " " + i.op_str
+

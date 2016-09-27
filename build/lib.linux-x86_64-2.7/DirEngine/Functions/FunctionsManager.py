@@ -26,22 +26,95 @@ class FunctionsManager:
         self.branch_count = 0 # branch 개수
 
 
-    def analyze(self):
+    def analyze(self,bit=True):
         self.functions = []
         self.CF = CodeFlowManager(self)
         self.CF.analyze()
-        self._Analysis_Functions(self.CF.fqueue_sucess)
 
+        if bit is True:
+            pass
+            #self._Analysis_Functions(self.CF.fqueue_sucess)
+
+
+    def _Analysis_Functions(self,f):
+        f_list = f.values() 
+        result = Queue()
+        f1 = []
+        f2 = []
+        f3 = []
+        #f4 = []
+        #f5 = []
+        aver_size = len(f_list) / 4
+        plus = len(f_list) % 4
+
+
+        for i in xrange(0,aver_size):
+            f1.append(f_list.pop())
+        for i in xrange(0,aver_size):
+            f2.append(f_list.pop())
+        for i in xrange(0,aver_size):
+            f3.append(f_list.pop())
+        #for i in xrange(0,aver_size):
+        #    f4.append(f_list.pop())      
+        #for i in xrange(0,aver_size):
+        #    f5.append(f_list.pop())                   
+        for i in xrange(0,plus):
+            f1.append(f_list.pop())
+
+        p1 = Process(target = self._Process, args= (f1,result))
+        p2 = Process(target = self._Process, args= (f2,result))
+        p3 = Process(target = self._Process, args= (f3,result))
+        #p4 = Process(target = self._Process, args= (f4,result))
+        #p5 = Process(target = self._Process, args= (f5,result))
+        p1.start()
+        p2.start()
+        p3.start()
+        #p4.start()
+        #p5.start()
+
+        p1.join()
+        p2.join()
+        p3.join()
+        #p4.join()
+        #p5.join()
+
+        result.put('STOP')
+        sum = 0
+        while True:
+            tmp = result.get()
+            if tmp == 'STOP' : break
+            else: self.functions.extend(tmp)
+
+    def _Process(self,f_list,result):
+        functions = []
+        for _f in f_list:
+            function = _f
+            print hex(function.addr)
+            fnc = self._Get_Function(function)
+            functions.append(fnc) 
+        result.put(functions)
+
+    '''
+    def _Analysis_Functions(self,f):
+        Process(targetas = self._Get_Function, args= (function,result))
+        for _f in f.keys():
+            function = f[_f]
+            print hex(function.addr)
+            self._Get_Function(function)
+            self.functions.append(function) 
+            
 
 
     def _Analysis_Functions(self,f):
         functions = []
         processing = []
         result = Queue()
-        for _f in f:
-            function = _f
+
+
+        for _f in f.keys():
+            function = f[_f]
             print hex(_f.addr) , "START"
-            processing.append(Process(target = self._Get_Function, args= (function,result)))
+            processing.append(Process(targets = self._Get_Function, args= (function,result)))
             processing[len(processing)-1].start()
         
         result.put('OK')
@@ -58,9 +131,9 @@ class FunctionsManager:
             
 
         return functions
+    '''
 
-
-    def _Get_Function(self,f,result):
+    def _Get_Function(self,f):
         fnc = {}
         fnc['blocks'] = []
         fnc['xref_to'] = f.xref_fb_to
@@ -251,11 +324,6 @@ class FunctionsManager:
         self.stat_count += 1
         return stat
 
-    def _Get_Header(self,h): #PE,ELF를 나눠서 처리 해야함
-        if h.filetype == "pe":
-            return self._Analyzer.Header()
-        return {}
-
     # 어셈명령 빈도
     def _Get_mne_count(self,mne):
         if self.mne_count.has_key(mne):
@@ -275,17 +343,16 @@ class FunctionsManager:
 class CodeFlowManager:
     _manager = None
     _header = None
-    fqueue = []
-    fqueue_sucess = []
-    fqueue_sucess_addr = []
-    new_fb_list = []
+    fqueue = {}
+    fqueue_sucess = {}
+    new_fb_list = {}
+    main_section = ""
     def __init__(self,manager):
         self._manager = manager
         self._header = self._manager._header
-        self.fqueue = []
-        self.fqueue_sucess = []
-        self.fqueue_sucess_addr = []
-        self.new_fb_list = []
+        self.fqueue = {}
+        self.fqueue_sucess = {}
+        self.new_fb_list = {}
         self.new_bb_list = []
         pyvex.set_iropt_level(1)
 
@@ -294,26 +361,28 @@ class CodeFlowManager:
         self._initlize_function()
 
         while True:
-            if self.fqueue == []:
+            if self.fqueue == {}:
                 break
 
-            fb = self.fqueue.pop(0)
-            if(fb.addr in self.fqueue_sucess_addr):
+            fb = self.fqueue[self.fqueue.keys().pop(0)]
+            if(str(fb.addr) in self.fqueue_sucess.keys()):
                 continue
 
-            print "Function : ",hex(fb.addr)
+            self.FuncAnaStart_Handler(fb)
+
             self.handle_function(fb)
             self.FuncAnaEnd_Handler(fb)
 
         print "Function count is " ,len(self.fqueue_sucess)
 
     def fqueue_append(self,fb):
-        if not fb.addr in self.fqueue_sucess_addr:
-            self.fqueue.append(fb)
+        if(str(fb.addr) not in self.fqueue_sucess.keys()):
+            self.fqueue[str(fb.addr)] = fb
 
 
     def _initlize_function(self):
         fb = Function_block(self._header._entry + self._header.base_addr,entry_function=True)
+        self.main_section = self._manager._header.is_section(fb.addr).Name
         self.fqueue_append(fb)
 
 
@@ -342,7 +411,6 @@ class CodeFlowManager:
 
     def handle_branch(self,bb):
         irsb = bb.irsb
-        self.irsb_constants(irsb.constants)
         try:
             if irsb.jumpkind == "Ijk_Boring":
                 self.Boring_Handler(bb,irsb)
@@ -366,6 +434,9 @@ class CodeFlowManager:
             print e
             import pdb
             pdb.set_trace()
+
+        self.irsb_constants(bb)
+
 
 
     def Boring_Handler(self,bb,irsb):
@@ -428,16 +499,60 @@ class CodeFlowManager:
         pass
 
 
+    def FuncAnaStart_Handler(self,fb):
+        if(self._manager._header.filetype == 'pe'):
+            ret = self._manager._header.iat_symbol(fb.addr)
+            if ret != False:
+                fb.name = ret
+
+
+
+
     def FuncAnaEnd_Handler(self,fb):
-        if(fb.addr not in self.fqueue_sucess_addr):
-            self.fqueue_sucess_addr.append(fb.addr)
-            self.fqueue_sucess.append(fb)
+        if(str(fb.addr) not in self.fqueue_sucess.keys()):
+            self.fqueue_sucess[str(fb.addr)] = fb
+            del self.fqueue[str(fb.addr)]
 
 
-
-    def irsb_constants(self,constants):
+    def irsb_constants(self,bb):
+        irsb = bb.irsb
+        constants = irsb.constants
+        jump_targets = list(irsb.constant_jump_targets)
         for constant in constants:
-            int(str(constant),16)
+            constant = int(str(constant),16)
+
+            if irsb.direct_next is True:
+                if constant == int(str(irsb.next),16): #next 인경우
+                    continue
+
+            if constant in jump_targets: #jump target 인경우
+                continue
+
+            if constant == (bb.addr + irsb.size): #next block
+                continue
+
+            if isinstance(irsb.statements[len(irsb.statements)-1],pyvex.IRStmt.Exit): # 조건 점프일경우
+                insert_addr = irsb.statements[len(irsb.statements)-1].dst
+                if type(insert_addr) is pyvex.IRExpr.Const:  # pylint: disable=unidiomatic-typecheck
+                    target_addr = insert_addr.con.value
+                elif type(insert_addr) in (pyvex.IRConst.U32, pyvex.IRConst.U64):  # pylint: disable=unidiomatic-typecheck
+                    target_addr = insert_addr.value
+                elif type(insert_addr) in (int, long):  # pylint: disable=unidiomatic-typecheck
+                    target_addr = insert_addr
+                else:
+                    target_addr = None
+                    import pdb
+                    pdb.set_trace()
+                if constant == target_addr:
+                    continue
+
+            try:
+                if self.main_section == self._manager._header.is_section(constant).Name: # 간접 Address Functio Block
+                    new_fb = self.new_fb(Function_block(constant,const_jump=True))
+                    self.xref_const(bb,new_fb)
+                    self.fqueue_append(new_fb)
+            except Exception,e:
+                pass
 
 
     def disasmble(self,bb):
@@ -464,11 +579,20 @@ class CodeFlowManager:
         desc_fb.set_xref_desc_fb(src_fb)
 
 
+    def xref_const(self,src_bb,desc_fb): # B->Function Block Xref
+        src_bb.set_xref_const_src_fb(desc_fb)
+        desc_fb.set_xref_const_desc_fb(src_bb)
+
+
     def new_fb(self,fb):
-        self.new_fb_list.append(fb)
-        return self.new_fb_list[len(self.new_fb_list)-1]
+        if(str(fb.addr) not in self.new_fb_list.keys()):
+            self.new_fb_list[str(fb.addr)] = fb
+
+        return self.new_fb_list[str(fb.addr)]
 
 
     def new_bb(self,bb):
         self.new_bb_list.append(bb)
         return self.new_bb_list[len(self.new_bb_list)-1]        
+
+

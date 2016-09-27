@@ -28,7 +28,6 @@ from ..error import Error
 from ._header import _header
 from .Archinfo.ArchSelector import ArchSelector
 import os
-CHECKSEC_PATH = os.path.join(os.path.dirname( os.path.abspath( __file__ ) ),'checksec.sh')
 
 
 class ELF(_header):
@@ -36,7 +35,6 @@ class ELF(_header):
     _elf = None
     _versioninfo = None
     def __init__(self,path,filetype,stream=None,backend=None):
-        print os.path.isfile(CHECKSEC_PATH)
         if ELFFile is None:
             raise INSTALLerror("Install the ELFFile module to use the ELF backend!") 
         super(ELF, self).__init__(path,filetype)

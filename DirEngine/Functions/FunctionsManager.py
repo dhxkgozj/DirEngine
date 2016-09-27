@@ -547,11 +547,11 @@ class CodeFlowManager:
                     continue
 
             try:
-                if not self.main_section == self._manager._header.is_section(constant).Name: # 간접 Address Functio Block
+                if self.main_section == self._manager._header.is_section(constant).Name: # 간접 Address Functio Block
                     new_fb = self.new_fb(Function_block(constant,const_jump=True))
                     self.xref_const(bb,new_fb)
                     self.fqueue_append(new_fb)
-            except:
+            except Exception,e:
                 pass
 
 

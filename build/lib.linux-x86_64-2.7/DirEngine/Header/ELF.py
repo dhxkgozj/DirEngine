@@ -27,6 +27,8 @@ import hashlib
 from ..error import Error
 from ._header import _header
 from .Archinfo.ArchSelector import ArchSelector
+import os
+
 
 class ELF(_header):
     _backend = None
@@ -107,6 +109,12 @@ class ELF(_header):
             result['e_shstrndx'] = header['e_shstrndx']
         return result
 
+    def is_section(self,addr):
+
+        for nsec, section in enumerate(self._elf.iter_sections()):
+            if  addr >= (section['sh_addr']) and addr <= (section['sh_addr'] + section['sh_size']):
+                section.Name = section.name
+                return section
 
     def get_sections(self):
         sections = []
@@ -362,7 +370,12 @@ class ELF(_header):
 
 
 
-
+    def Header(self):
+        header = {}
+        header['header'] = self.get_elf_header()
+        header['sections'] = self.get_sections()
+        header['program'] = self.get_program_header()
+        return header
 
 
 
