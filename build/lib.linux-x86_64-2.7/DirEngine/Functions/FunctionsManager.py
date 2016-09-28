@@ -369,9 +369,9 @@ class CodeFlowManager:
                 continue
 
             self.FuncAnaStart_Handler(fb)
-
             self.handle_function(fb)
             self.FuncAnaEnd_Handler(fb)
+            print "Function : " , hex(fb.addr)
 
         print "Function count is " ,len(self.fqueue_sucess)
 
@@ -382,7 +382,7 @@ class CodeFlowManager:
 
 
     def _initlize_function(self):
-        fb = Function_block(self._header._entry + self._header.base_addr,entry_function=True)
+        fb = self.new_fb(Function_block(self._header._entry + self._header.base_addr,entry_function=True))
         self.main_section = self._manager._header.is_section(fb.addr).Name
         self.fqueue_append(fb)
 

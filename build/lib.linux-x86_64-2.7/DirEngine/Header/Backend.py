@@ -23,10 +23,10 @@ class Backend:
             stream = open(self.path, 'rb')
         filetype = self.identify_filetype(stream)
         if(filetype == "pe"):
-            _header = PE(self.path,self.filetype,stream=stream)
+            _header = PE(self.path,filetype,stream=stream)
             
         elif(filetype == "elf"):
-            _header = ELF(self.path,self.filetype,stream=stream)
+            _header = ELF(self.path,filetype,stream=stream)
 
         return _header
 

@@ -8,6 +8,10 @@ import hashlib
 from ..error import Error
 from ._header import _header
 from .Archinfo.ArchSelector import ArchSelector
+
+ASLR = 0x40
+
+
 def none(string):
     if string == None:
         string = 0
@@ -16,7 +20,11 @@ def none(string):
 class PE(_header):
     _backend = None
     _pe = None
+    _iat = {}
+    iat_symbols = {}
     def __init__(self,path,filetype,stream=None,backend=None):
+        self._iat = {}
+        self.iat_symbols = {}
         if pefile is None:
             raise CLEError("Install the pefile module to use the PE backend!")      
         super(PE, self).__init__(path,filetype)
@@ -44,6 +52,25 @@ class PE(_header):
 
         self.set_arch(ArchSelector().search(self.arch_str))
 
+        if (self._pe.OPTIONAL_HEADER.DllCharacteristics | ASLR) == self._pe.OPTIONAL_HEADER.DllCharacteristics:
+            self.set_aslr(True)
+        else:
+            self.set_aslr(False)
+
+        for i in self._pe.OPTIONAL_HEADER.DATA_DIRECTORY:
+            if(i.name == "IMAGE_DIRECTORY_ENTRY_IAT"): 
+                self._iat = i.__field_offsets__
+
+        self.iat_symbols = self.get_symbols()
+
+    def get_symbols(self):
+        result = {}
+        IMPORT = self._pe.DIRECTORY_ENTRY_IMPORT
+        for imports in IMPORT:
+            for imp in imports.imports:
+                result[str(imp.address)] = imp.name
+        return result
+
 
     def read_rva_addr(self,addr):
         for section in self._pe.sections:
@@ -55,6 +82,28 @@ class PE(_header):
         for section in self._pe.sections:
             if section.contains_rva(addr): 
                 return (addr - section.VirtualAddress + section.PointerToRawData)
+
+
+    def is_section(self,addr):
+        for section in self._pe.sections:
+            if section.contains_rva(addr-self.base_addr):
+                return section
+
+    def is_iat(self,addr):
+        if self._iat != {}:
+            return False
+        if (int(self.base_addr) + int(self._iat['VirtualAddress']) + int(self._iat['Size'])) <= int(addr):
+            if (int(self.base_addr) + int(self._iat['VirtualAddress']) + int(self._iat['Size'])) >= int(addr):
+                return True
+        return False
+
+    def iat_symbol(self,addr):
+        if not self.is_iat(addr):
+            return False
+        if str(addr) in iat_symbols.keys():
+            return iat_symbols[str(addr)]
+        return False
+
 
 
     def get_dos_header(self):
@@ -151,6 +200,11 @@ class PE(_header):
             result['size_heap_commit'] = (none(OPTIONAL.SizeOfHeapCommit))
         if(hasattr(OPTIONAL,'NumberOfRvaAndSizes')):                
             result['num_data_direct'] = (none(OPTIONAL.NumberOfRvaAndSizes))
+
+        for i in OPTIONAL.DATA_DIRECTORY:
+            result[i.name] = i.__field_offsets__
+
+
         return result
 
     def get_data_directory_table(self):
@@ -201,10 +255,7 @@ class PE(_header):
 
     def Header(self):
         header = {}
-        '''
-        header['binary_type'] = self.get_binary_type()
-        header['crypto_type'] = self.get_crypto_type()
-        '''
+
         header['dos'] = self.get_dos_header()
         header['sections'] = self.get_pe_sections()
         header['nt_file'] = self.get_nt_file_header()

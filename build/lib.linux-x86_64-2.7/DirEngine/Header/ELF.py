@@ -238,7 +238,7 @@ class ELF(_header):
                         sym_dic['nsym'] = nsym
                         sym_dic['st_value'] = symbol['st_value']
                         sym_dic['st_size'] = symbol['st_size']
-                        sym_dic['type'] = describe_symbol_type(symbol['st_info']['type'])
+                        sym_dic['st_type'] = describe_symbol_type(symbol['st_info']['type'])
                         sym_dic['bind'] = describe_symbol_bind(symbol['st_info']['bind'])
                         sym_dic['vis'] = describe_symbol_visibility(symbol['st_other']['visibility'])
                         sym_dic['ndx'] = describe_symbol_shndx(symbol['st_shndx'])

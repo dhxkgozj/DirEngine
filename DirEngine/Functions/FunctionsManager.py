@@ -369,9 +369,9 @@ class CodeFlowManager:
                 continue
 
             self.FuncAnaStart_Handler(fb)
-
             self.handle_function(fb)
             self.FuncAnaEnd_Handler(fb)
+            print "Function : " , hex(fb.addr)
 
         print "Function count is " ,len(self.fqueue_sucess)
 
