@@ -2,27 +2,26 @@
 
 
 class Function_block:
-	addr = None
-	name = None
-	entry_function = False
-	const_jump = False
-	bqueue = []
-	bqueue_sucess = []
-	bqueue_sucess_addr = []
-	signature = {}
-	expr = {}
-	edge = {}
-	operation = {}
-	assemble_count = {}
-	def __init__(self,addr,const_jump=False,entry_function=False):
-		self.addr = addr
-		self.name = "sub_" + str(hex(addr))
-		self.entry_function = entry_function
-		self.xref_fb_to = []
-		self.xref_fb_from = []
-		self.xref_const_to = []
-		self.const_jump = const_jump
-		self.signature = {
+    addr = None
+    name = None
+    entry_function = False
+    const_jump = False
+    bqueue = {}
+    bqueue_sucess = {}
+    signature = {}
+    expr = {}
+    edge = {}
+    operation = {}
+    assemble_count = {}
+    def __init__(self,addr,const_jump=False,entry_function=False):
+        self.addr = addr
+        self.name = "sub_" + str(hex(addr))
+        self.entry_function = entry_function
+        self.xref_fb_to = []
+        self.xref_fb_from = []
+        self.xref_const_to = []
+        self.const_jump = const_jump
+        self.signature = {
             'Ist_NoOp' : 0,
             'Ist_IMark' : 0,
             'Ist_AbiHint' : 0,
@@ -58,21 +57,22 @@ class Function_block:
         }
         self.operation = {}
         self.assemble_count = {}
+        self.bqueue = {}
+        self.bqueue_sucess = {}
 
+    def bqueue_append(self,bb):
+        if not str(bb.addr) in self.bqueue_sucess.keys():
+            if not str(bb.addr) in self.bqueue.keys():
+                self.bqueue[str(bb.addr)] = bb
+                self.edge['node'] += 1
+        self.edge['in'] += 1
 
-	def bqueue_append(self,bb):
-		if not bb.addr in self.bqueue_sucess_addr:
-			self.bqueue.append(bb)
-			self.bqueue_sucess_addr.append(bb.addr)
-			self.bqueue_sucess.append(bb)
-			self.edge['in'] = 0
-            self.edge['node'] += 1
+    def set_xref_src_fb(self,desc_fb):
+        self.xref_fb_from.append(desc_fb.addr)
+        self.edge['out'] += 1
 
-	def set_xref_src_fb(self,desc_fb):
-		self.xref_fb_from.append(desc_fb.addr)
+    def set_xref_desc_fb(self,src_fb):
+        self.xref_fb_to.append(src_fb.addr)
 
-	def set_xref_desc_fb(self,src_fb):
-		self.xref_fb_to.append(src_fb.addr)
-
-	def set_xref_const_desc_fb(self,src_bb):
-		self.xref_const_to.append(src_bb.addr)
+    def set_xref_const_desc_fb(self,src_bb):
+        self.xref_const_to.append(src_bb.addr)

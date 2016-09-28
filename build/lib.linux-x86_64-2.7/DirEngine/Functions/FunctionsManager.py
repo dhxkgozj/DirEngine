@@ -377,7 +377,8 @@ class CodeFlowManager:
 
     def fqueue_append(self,fb):
         if(str(fb.addr) not in self.fqueue_sucess.keys()):
-            self.fqueue[str(fb.addr)] = fb
+            if(str(fb.addr) not in self.fqueue.keys()):
+                self.fqueue[str(fb.addr)] = fb
 
 
     def _initlize_function(self):
@@ -397,17 +398,17 @@ class CodeFlowManager:
 
         count = 1
         while True:
-            if fb.bqueue == []:
+            if fb.bqueue == {}:
                 break
 
-            bb = fb.bqueue.pop(0)
+            bb = fb.bqueue[fb.bqueue.keys().pop(0)]
             irsb , insn = self.disasmble(bb)
             bb.set_irsb(irsb)
             bb.set_insn(insn)
 
             self.handle_branch(bb)
             count += 1
-
+            self.BranchAnaEnd_Handler(bb)
 
     def handle_branch(self,bb):
         irsb = bb.irsb
@@ -513,6 +514,14 @@ class CodeFlowManager:
             self.fqueue_sucess[str(fb.addr)] = fb
             del self.fqueue[str(fb.addr)]
 
+
+    def BranchAnaStart_Handler(self,bb):
+        pass
+
+    def BranchAnaEnd_Handler(self,bb):
+        if not str(bb.addr) in bb.fb.bqueue_sucess.keys():
+            bb.fb.bqueue_sucess[str(bb.addr)] = bb
+            del bb.fb.bqueue[str(bb.addr)]
 
     def irsb_constants(self,bb):
         irsb = bb.irsb
