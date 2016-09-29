@@ -1,11 +1,12 @@
 DIR Engine이란?
 Disassembly Intermediate Representation 의 약자로 EGOIST에서 지원하는 정적 분석 엔진이다.
 지원 플랫폼은 Windows, MAC, Linux를 지원할 예정이며 C++로 구성되어 있다.
-또한 현재 컴파일은 GCC 만 지원한다. (일부 VS 지원) - 차후 전부 지원 
+또한 현재 컴파일은(VEX) GCC 만 지원한다. (일부 VS 지원) - 차후 전부 지원 
 아래에 보면 빌드에 필요한 방법과 사용하는 라이브러리가 적혀 있다.
 
 0x1. 빌드?
-make -f Make 파일
+아래 라이브러리들을 설치하시고
+python setup.py install 하시면 됩니다.
 
 
 
@@ -16,8 +17,16 @@ VEX ( https://github.com/angr/vex )
 CAPSTONE ( https://github.com/aquynh/capstone )
 - All Platform 다 지원, VS, GCC 지원
 
+PyELFtools (https://github.com/eliben/pyelftools)
+- ELF 헤더 분석
+
+PEFile (https://github.com/erocarrera/pefile)
+- PE 헤더 분석
+
+
 
 
 0x3. 폴더 구성
 lib : 라이브러리들이 모여있는 폴더
 test : 라이브러리 코드 검증, Example 폴더
+DirEngine : 실제 코드
