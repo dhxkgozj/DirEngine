@@ -262,5 +262,5 @@ class PE(_header):
         header['nt_optional'] = self.get_nt_optional_header()
         header['data_directory'] = self.get_data_directory_table()
         header['iat'] = self.get_iat_header()
-        header['meta'] = self.get_meta_header()
+        header['meta'] = self.get_meta_data()
         return header
