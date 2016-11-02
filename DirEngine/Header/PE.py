@@ -72,10 +72,10 @@ class PE(_header):
         return result
 
 
-    def read_rva_addr(self,addr):
+    def read_rva_to_addr(self,rva):
         for section in self._pe.sections:
-            if section.contains_rva(addr-self.base_addr): 
-                return ((addr-self.base_addr) - section.VirtualAddress + section.PointerToRawData)
+            if section.contains_rva(rva-self.base_addr): 
+                return ((rva-self.base_addr) - section.VirtualAddress + section.PointerToRawData)
 
 
     def read_addr(self,addr):

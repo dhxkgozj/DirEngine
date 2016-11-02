@@ -45,16 +45,11 @@ class ELF(_header):
         else:
             self._elf = ELFFile(stream)  
         
-        bindata = self._elf.stream.read()
-        self.fileMd5 = hashlib.md5(bindata).hexdigest()
-        self.fileSha1 = hashlib.sha1(bindata).hexdigest()
-        self.fileSha256 = hashlib.sha256(bindata).hexdigest()
-        self.fileSha512 = hashlib.sha512(bindata).hexdigest()
-        del bindata
-
-        self._elf.stream.seek(0)
         self.bin_data = self._elf.stream.read()
-        self._elf.stream.seek(0)
+        self.fileMd5 = hashlib.md5(self.bin_data).hexdigest()
+        self.fileSha1 = hashlib.sha1(self.bin_data).hexdigest()
+        self.fileSha256 = hashlib.sha256(self.bin_data).hexdigest()
+        self.fileSha512 = hashlib.sha512(self.bin_data).hexdigest()
         self.arch_str = self._elf.header.e_machine
         self._entry = self._elf.header.e_entry
         if(self._elf.little_endian):
@@ -62,6 +57,9 @@ class ELF(_header):
         else:
             self.endness = "Iend_BE"
         self.set_arch(ArchSelector().search(self.arch_str,self.endness))
+
+    def read_rva_to_addr(self,rva):
+        return rva
 
 
     def read_addr(self,addr):

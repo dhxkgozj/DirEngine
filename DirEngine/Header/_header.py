@@ -39,6 +39,10 @@ class _header(object):
     def read_addr(self,addr):
         raise NotImplementedError("read_addr is not implemented.") 
 
+    def read_rva_to_addr(self,rva):
+        raise NotImplementedError("read_rva_to_addr is not implemented.") 
+
+
     @property
     def get_md5(self):
         return self.fileMd5

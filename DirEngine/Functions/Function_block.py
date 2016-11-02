@@ -20,6 +20,7 @@ class Function_block:
         self.xref_fb_to = []
         self.xref_fb_from = []
         self.xref_const_to = []
+        self.xref_string = []
         self.const_jump = const_jump
         self.signature = {
             'Ist_NoOp' : 0,
@@ -76,3 +77,6 @@ class Function_block:
 
     def set_xref_const_desc_fb(self,src_bb):
         self.xref_const_to.append(src_bb.addr)
+
+    def set_xref_string(self,string):
+        self.xref_string.append(string)

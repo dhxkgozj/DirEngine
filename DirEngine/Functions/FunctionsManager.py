@@ -8,6 +8,7 @@ from .Function import Function
 from .Branch import Branch
 from .Function_block import Function_block
 from .Branch_block import Branch_block
+from .BinaryString import *
 from multiprocessing import Process,Queue
 
 
@@ -48,6 +49,7 @@ class CodeFlowManager:
         self.fqueue_sucess = {}
         self.new_fb_list = {}
         self.new_bb_list = []
+        self.string_list = {}
         pyvex.set_iropt_level(1)
 
     def analyze(self):
@@ -68,6 +70,8 @@ class CodeFlowManager:
             print "Function : " , hex(fb.addr)
 
         print "Function count is " ,len(self.fqueue_sucess)
+        import pdb
+        pdb.set_trace()
 
     def fqueue_append(self,fb):
         if(str(fb.addr) not in self.fqueue_sucess.keys()):
@@ -103,6 +107,7 @@ class CodeFlowManager:
             self.handle_branch(bb)
             count += 1
             self.BranchAnaEnd_Handler(bb)
+
 
     def handle_branch(self,bb):
         irsb = bb.irsb
@@ -254,7 +259,14 @@ class CodeFlowManager:
                     new_fb = self.new_fb(Function_block(constant,const_jump=True))
                     self.xref_const(bb,new_fb)
                     self.fqueue_append(new_fb)
+                else:
+                    real_addr = self._manager._header.read_rva_to_addr(constant)
+                    text = Ascii_valid(self._manager._header.read_bytes(real_addr,1000))
+                    if(text != False):
+                        self.xref_string(bb.fb,real_addr,text)
+                   
             except Exception,e:
+                print e
                 pass
 
 
@@ -285,6 +297,13 @@ class CodeFlowManager:
     def xref_const(self,src_bb,desc_fb): # B->Function Block Xref
         src_bb.set_xref_const_src_fb(desc_fb)
         desc_fb.set_xref_const_desc_fb(src_bb)
+
+    def xref_string(self,src_fb,addr,string):
+        addr = str(addr)
+        if not self.string_list.has_key(addr):
+            self.string_list[addr] = string
+
+        src_fb.set_xref_string({addr : self.string_list[addr]})
 
 
     def new_fb(self,fb):
