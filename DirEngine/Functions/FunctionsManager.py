@@ -259,7 +259,7 @@ class CodeFlowManager:
                     new_fb = self.new_fb(Function_block(constant,const_jump=True))
                     self.xref_const(bb,new_fb)
                     self.fqueue_append(new_fb)
-                else:
+                else: #  String Valid Check
                     real_addr = self._manager._header.read_rva_to_addr(constant)
                     text = Ascii_valid(self._manager._header.read_bytes(real_addr,1000))
                     if(text != False):
